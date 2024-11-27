@@ -1,3 +1,14 @@
+//! # Space Invaders Game
+//!
+//! A terminal-based Space Invaders clone implemented in Rust using crossterm for
+//! terminal manipulation and rendering.
+//!
+//! ## Game Mechanics
+//! - Player controls a ship at the bottom of the screen
+//! - Enemies move across and down the screen
+//! - Player can move left and right, shoot bullets
+//! - Game ends when enemies reach bottom or player is hit
+
 use crossterm::{
     cursor,
     event::{self, Event, KeyCode},
@@ -17,24 +28,43 @@ const PLAYER_CHAR: char = '^';
 const ENEMY_CHAR: char = 'W';
 const BULLET_CHAR: char = '|';
 
+/// Represents a game object with position and alive status
 #[derive(Clone, PartialEq)]
 struct GameObject {
+    /// X-coordinate of the object
     x: usize,
+    /// Y-coordinate of the object
     y: usize,
+    // Whether the object is still active in the game
     alive: bool,
 }
 
+/// Manages the entire game state and logic
 struct Game {
+    /// Player's game object
     player: GameObject,
+    // List of enemy game objects
     enemies: Vec<GameObject>,
+    /// Bullets fired by the player
     player_bullets: Vec<GameObject>,
+    /// Bullets fired by enemies
     enemy_bullets: Vec<GameObject>,
+    // Current player's score
     score: usize,
+    // Flag to indicate if the game is over
     game_over: bool,
+    /// Counter to control enemy movement speed
     enemy_move_counter: usize, // New field to slow down enemy movement
 }
 
+
+
 impl Game {
+    /// Creates a new game instance with initial setup
+    ///
+    /// # Returns
+    /// A new Game with spawned enemies and default player position
+    
     fn new() -> Self {
         let mut game = Game {
             player: GameObject { 
@@ -53,6 +83,7 @@ impl Game {
         game
     }
 
+    /// Spawns enemies in a grid pattern
     fn spawn_enemies(&mut self) {
         for row in 0..5 {  // Increased rows
             for col in 0..10 {  // Increased columns
@@ -64,7 +95,10 @@ impl Game {
             }
         }
     }
-
+    /// Moves the player horizontally
+    ///
+    /// # Arguments
+    /// * `direction` - Movement direction (-1 for left, 1 for right)
     fn move_player(&mut self, direction: i32) {
         let new_x = self.player.x as i32 + direction;
         if new_x > 0 && new_x < SCREEN_WIDTH as i32 - 1 {
@@ -72,6 +106,7 @@ impl Game {
         }
     }
 
+    /// Fires a bullet from the player's current position
     fn shoot_bullet(&mut self) {
         self.player_bullets.push(GameObject {
             x: self.player.x,
@@ -80,6 +115,7 @@ impl Game {
         });
     }
 
+    /// Updates bullet positions and checks for collisions
     fn move_bullets(&mut self) {
         // Move player bullets up
         for bullet in &mut self.player_bullets {
@@ -103,6 +139,7 @@ impl Game {
         self.check_collisions();
     }
 
+    /// Randomly makes enemies shoot bullets
     fn enemy_shoot(&mut self) {
         let mut rng = rand::thread_rng();
         for enemy in &self.enemies {
@@ -116,6 +153,7 @@ impl Game {
         }
     }
 
+    /// Moves enemies across and down the screen
     fn move_enemies(&mut self) {
         // Slow down enemy movement
         self.enemy_move_counter += 1;
@@ -153,6 +191,7 @@ impl Game {
         }
     }
 
+    /// Checks and handles collisions between bullets and game objects
     fn check_collisions(&mut self) {
         // Player bullets hitting enemies
         for bullet in &mut self.player_bullets {
@@ -186,6 +225,10 @@ impl Game {
         self.enemies.retain(|e| e.alive);
     }
 
+    /// Renders the game state with color
+    ///
+    /// # Returns
+    /// A `Result` indicating successful rendering or an error
     fn render_colored(&self) -> io::Result<()> {
         let mut stdout = stdout();
         
@@ -243,6 +286,10 @@ impl Game {
         Ok(())
     }
 
+    // Generates a string representation of the game screen
+    ///
+    /// # Returns
+    /// A `String` containing the current game state
     fn render(&self) -> String {
         let mut screen = vec![vec![' '; SCREEN_WIDTH]; SCREEN_HEIGHT];
 
